@@ -1,0 +1,31 @@
+<html>
+  <head>
+    <meta charset="UTF-8"> 
+    <title>Toscana Webhook Event Log</title>
+  </head>
+  <body>
+    <h1>Toscana Webhook Event Log</h1>
+    <p style="color:green;"><time></time></p>
+    <h2>Received webhook events:</h2>
+    <div><ul  id="logs"></ul></div>
+    <script src="socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.7.1.min.js"></script>
+    <script>
+      var socketUrl = window.location.protocol + '//' + window.location.host;
+      // creating a new websocket
+      var socket = io.connect( socketUrl );
+	  
+      // on every notification (new received outboud request event) we update the log
+      socket.on('notification', function (data) {
+        // convert the json string into a valid javascript object
+        //var _data = JSON.parse(data);
+        $('time').html('Last Update:' + new Date());
+	  
+        var node = document.getElementById("logs");
+        var newNode = document.createElement("li");
+        newNode.innerHTML = data;
+        node.insertBefore(newNode, node.firstChild);
+      });
+    </script>
+  </body>
+</html>

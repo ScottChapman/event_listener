@@ -1,0 +1,20 @@
+{
+	"name": "NodejsStarterApp",
+	"version": "0.0.1",
+	"private": true,
+	"scripts": {
+		"start": "node app.js"
+	},
+	"dependencies": {
+		"express": "4.13.x",
+		"cfenv": "1.0.x",
+		"body-parser": "1.15.2",
+		"dateformat": "1.0.12",
+		"event": "^1.0.0",
+		"socket.io": "^1.4.8"
+	},
+	"repository": {},
+	"engines": {
+		"node": "4.x"
+	} 
+}
