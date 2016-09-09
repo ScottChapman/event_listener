@@ -8,6 +8,7 @@
 // for more info, see: http://expressjs.com
 var express = require('express');
 var http = require("http");
+var dns = require('dns');
 
 // cfenv provides access to your Cloud Foundry environment
 // for more info, see: https://www.npmjs.com/package/cfenv
@@ -35,8 +36,13 @@ app.use(errorHandler);
 var appEnv = cfenv.getAppEnv();
 
 
-var httpServer = http.createServer(app).listen(appEnv.port);
+var httpServer = http.createServer(app).listen(appEnv.port, '0.0.0.0', function() {
+  // print a message when the server starts listening
+  console.log("server starting on " + appEnv.url);
+});
 var io = require("socket.io").listen(httpServer);
+
+
 
 // start server on the specified port and binding host
 //app.listen(appEnv.port, '0.0.0.0', function() {
@@ -72,11 +78,24 @@ app.get("/webhook/eventlog", function(req, res) {
 
 // first demo webhook endpoint
 app.post("/webhook/eventlog", function(req, res) {
-	var jsonbody = req.body;
-	var stringJsonbody = JSON.stringify(jsonbody);
-	var log = '[' + getTime() + "]: /webhook/eventlog: " + stringJsonbody + ", response: status 200";
-    eventHandler.emit('webhook-event', log);
-	res.status(200).end();
+	var clienthost = "";
+	var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+	dns.reverse(ip,  function(err, hostnames){
+        if(err){
+            clienthost="client ip=" + ip + " not resolvable";
+        } else {
+			if (hostnames.length >= 1) {
+				clienthost=hostnames[0];
+			} else {
+				clienthost="client ip=" + ip + " not resolvable";
+			}
+			var jsonbody = req.body;
+			var stringJsonbody = JSON.stringify(jsonbody);
+			var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/eventlog: " + stringJsonbody + ", response: status 200";
+			eventHandler.emit('webhook-event', log);
+			res.status(200).end();
+		}
+	});
 });
 
 // create a websocket connection for both http+https to keep the content updated
@@ -91,16 +110,27 @@ function getTime() {
 }
 
 function valdiateUrlGetRequest(req, res, endpoint) {
-	var value = req.headers[URL_VALIDATION_SECRET_HEADER];
-	if (value !== 'undefined') {
-		var jsonresponse = '{"' + URL_VALIDATION_SECRET_BODY + '":"' + value + '"}';
-		var log = "/webhook/" + endpoint + ": " + ", status ok, response: " + jsonresponse;
-		eventHandler.emit('webhook-event', log);
-		res.writeHead(200, {"Content-Type": "application/json"});
-		res.end(jsonresponse);
-	} else {
-		res.status(400).end();
-	}
+	var clienthost = "";
+	var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+	dns.reverse(ip,  function(err, hostnames){
+        if(err){
+            clienthost="client ip=" + ip + " not resolvable";
+        } else {
+			if (hostnames.length >= 1) {
+				clienthost=hostnames[0];
+			} else {
+				clienthost="client ip=" + ip + " not resolvable";
+			}
+			var value = req.headers[URL_VALIDATION_SECRET_HEADER];
+			if (value !== 'undefined') {
+				var jsonresponse = '{"' + URL_VALIDATION_SECRET_BODY + '":"' + value + '"}';
+				var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/" + endpoint + ": " + ", status ok, response: " + jsonresponse;
+				eventHandler.emit('webhook-event', log);
+				res.writeHead(200, {"Content-Type": "application/json"});
+				res.end(jsonresponse);
+			} else {
+				res.status(400).end();
+			}
+		}
+	});	
 }
-
-
