@@ -73,28 +73,49 @@ app.get("/webhook", function(req, res) {
 
 
 app.get("/webhook/eventlog", function(req, res) {
-	valdiateUrlGetRequest(req, res, "eventlog");
-});
-
-// first demo webhook endpoint
-app.post("/webhook/eventlog", function(req, res) {
 	var clienthost = "";
-	var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+	var ip = req.connection.remoteAddress;
+	if (req.headers['x-forwarded-for'] !== undefined) {
+		var value = req.headers['x-forwarded-for'];
+		var ips = value.split(',');
+		ip = ips[0];
+	}
+
 	dns.reverse(ip,  function(err, hostnames){
-        if(err){
-            clienthost="client ip=" + ip + " not resolvable";
-        } else {
+		if(err){
+			clienthost="client ip=" + ip + " not resolvable";
+		} else {
 			if (hostnames.length >= 1) {
 				clienthost=hostnames[0];
 			} else {
 				clienthost="client ip=" + ip + " not resolvable";
 			}
-			var jsonbody = req.body;
-			var stringJsonbody = JSON.stringify(jsonbody);
-			var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/eventlog: " + stringJsonbody + ", response: status 200";
-			eventHandler.emit('webhook-event', log);
-			res.status(200).end();
 		}
+		valdiateUrlGetRequest(req, res, "eventlog", clienthost);
+	});
+});
+
+// first demo webhook endpoint
+app.post("/webhook/eventlog", function(req, res) {
+	var clienthost = "";
+	var ip = req.connection.remoteAddress;
+	if (req.headers['x-forwarded-for'] !== undefined) {
+		var value = req.headers['x-forwarded-for'];
+		var ips = value.split(',');
+		ip = ips[0];
+	}
+		
+	dns.reverse(ip,  function(err, hostnames){
+		if(err){
+			clienthost="client ip=" + ip + " not resolvable";
+		} else {
+			if (hostnames.length >= 1) {
+				clienthost=hostnames[0];
+			} else {
+				clienthost="client ip=" + ip + " not resolvable";
+			}
+		}
+		logReceivedWebhook(req, res, "eventlog", clienthost);
 	});
 });
 
@@ -109,28 +130,22 @@ function getTime() {
 	return df(new Date(), 'HH:MM:ss.l');
 }
 
-function valdiateUrlGetRequest(req, res, endpoint) {
-	var clienthost = "";
-	var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-	dns.reverse(ip,  function(err, hostnames){
-        if(err){
-            clienthost="client ip=" + ip + " not resolvable";
-        } else {
-			if (hostnames.length >= 1) {
-				clienthost=hostnames[0];
-			} else {
-				clienthost="client ip=" + ip + " not resolvable";
-			}
-			var value = req.headers[URL_VALIDATION_SECRET_HEADER];
-			if (value !== 'undefined') {
-				var jsonresponse = '{"' + URL_VALIDATION_SECRET_BODY + '":"' + value + '"}';
-				var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/" + endpoint + ": " + ", status ok, response: " + jsonresponse;
-				eventHandler.emit('webhook-event', log);
-				res.writeHead(200, {"Content-Type": "application/json"});
-				res.end(jsonresponse);
-			} else {
-				res.status(400).end();
-			}
-		}
-	});	
+function logReceivedWebhook(req, res, endpoint, clienthost) {
+	var jsonbody = req.body;
+	var stringJsonbody = JSON.stringify(jsonbody);
+	var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/" + endpoint + ": " + stringJsonbody + ", response: status 200";
+	eventHandler.emit('webhook-event', log);
+	res.status(200).end();
+}
+
+function valdiateUrlGetRequest(req, res, endpoint, clienthost) {
+	if (req.headers[URL_VALIDATION_SECRET_HEADER] !== undefined) {
+		var jsonresponse = '{"' + URL_VALIDATION_SECRET_BODY + '":"' + req.headers[URL_VALIDATION_SECRET_HEADER] + '"}';
+		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/" + endpoint + ": " + ", status ok, response: " + jsonresponse;
+		eventHandler.emit('webhook-event', log);
+		res.writeHead(200, {"Content-Type": "application/json"});
+		res.end(jsonresponse);
+	} else {
+		res.status(400).end();
+	}
 }
