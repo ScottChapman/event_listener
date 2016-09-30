@@ -9,6 +9,7 @@
 var express = require('express');
 var http = require("http");
 var dns = require('dns');
+var crypto = require('crypto');
 
 // cfenv provides access to your Cloud Foundry environment
 // for more info, see: https://www.npmjs.com/package/cfenv
@@ -22,6 +23,9 @@ var df = require('dateformat');
 
 var URL_VALIDATION_SECRET_HEADER="X-OUTBOUND-ONETIME-SECRET".toLowerCase();
 var URL_VALIDATION_SECRET_BODY="OutboundWebhookOneTimeSecret";
+
+var WEBHOOK_VERIFICATION_KEYS=["35fijs1ajc11j8ptzncgk12bcjb3vyf2", "95fijs1ajc11j9ptzncgk00bcjb3vyf2"];
+var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-IBM-OUTBOUND-TOKEN".toLowerCase();
 
 // create a new express server
 var app = express();
@@ -149,9 +153,18 @@ function logReceivedWebhook(req, res, endpoint, clienthost) {
 	var rawbody = req.rawBody;
   	var jsonbody= JSON.parse(rawbody, 'utf8');
 	var stringJsonbody = JSON.stringify(jsonbody);
-	var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/" + endpoint + ": " + stringJsonbody + ", response: status 200";
-	eventHandler.emit('webhook-event', log);
-	res.status(200).end();
+
+	var verificationToken = req.headers[WEBHOOK_VERIFICATION_TOKEN_HEADER];
+
+	if ( verificationToken !== undefined && verifyPayload(verificationToken, stringJsonbody) === true ) {
+		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/" + endpoint + ": " + stringJsonbody + ", response: status 200";
+		eventHandler.emit('webhook-event', log);
+		res.status(200).end();
+	} else {
+		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/" + endpoint + ": received event ignored - could not be verified that it comes from Toscana, response: status 200";
+		eventHandler.emit('webhook-event', log);
+		res.status(200).end();
+	}	
 }
 
 function valdiateUrlGetRequest(req, res, endpoint, clienthost) {
@@ -164,4 +177,15 @@ function valdiateUrlGetRequest(req, res, endpoint, clienthost) {
 	} else {
 		res.status(400).end();
 	}
+}
+
+function verifyPayload(verificationToken, payload) {
+	for (var index in WEBHOOK_VERIFICATION_KEYS) {
+		var hash = crypto.createHmac('sha256', WEBHOOK_VERIFICATION_KEYS[index]).update(payload).digest('hex')
+
+		if (hash == verificationToken) {
+			return true;
+		}
+	}
+	return false;
 }
