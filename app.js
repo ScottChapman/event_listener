@@ -20,7 +20,7 @@ var fs = require("fs");
 var bodyParser = require('body-parser');
 var df = require('dateformat');
 
-var URL_VALIDATION_SECRET_HEADER="X-IBM-OUTBOUND-ONETIME-SECRET".toLowerCase();
+var URL_VALIDATION_SECRET_HEADER="X-OUTBOUND-ONETIME-SECRET".toLowerCase();
 var URL_VALIDATION_SECRET_BODY="OutboundWebhookOneTimeSecret";
 
 // create a new express server
@@ -29,7 +29,23 @@ var app = express();
 // serve the files out of ./public as our main files
 app.use(express.static(__dirname + '/public'));
 
-app.use(bodyParser.json())
+app.engine('html', require('ejs').renderFile);
+app.set('view engine', 'html');
+
+function rawBody(req, res, next) {
+  req.setEncoding('utf8');
+  req.rawBody = '';
+  req.on('data', function(chunk) {
+    req.rawBody += chunk;
+  });
+  req.on('end', function(){
+    next();
+  });
+}
+
+app.use(rawBody);
+//app.use(bodyParser.text({defaultCharset: 'utf-8'}));
+//app.use(bodyParser.json())
 app.use(errorHandler);
 
 // get the app environment from Cloud Foundry
@@ -41,8 +57,6 @@ var httpServer = http.createServer(app).listen(appEnv.port, '0.0.0.0', function(
   console.log("server starting on " + appEnv.url);
 });
 var io = require("socket.io").listen(httpServer);
-
-
 
 // start server on the specified port and binding host
 //app.listen(appEnv.port, '0.0.0.0', function() {
@@ -119,6 +133,7 @@ app.post("/webhook/eventlog", function(req, res) {
 	});
 });
 
+
 // create a websocket connection for both http+https to keep the content updated
 io.sockets.on("connection", function(socket) {
   eventHandler.on("webhook-event", function(data) {
@@ -131,7 +146,8 @@ function getTime() {
 }
 
 function logReceivedWebhook(req, res, endpoint, clienthost) {
-	var jsonbody = req.body;
+	var rawbody = req.rawBody;
+  	var jsonbody= JSON.parse(rawbody, 'utf8');
 	var stringJsonbody = JSON.stringify(jsonbody);
 	var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/" + endpoint + ": " + stringJsonbody + ", response: status 200";
 	eventHandler.emit('webhook-event', log);
