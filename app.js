@@ -24,8 +24,8 @@ var df = require('dateformat');
 var URL_VALIDATION_SECRET_HEADER="X-OUTBOUND-ONETIME-SECRET".toLowerCase();
 var URL_VALIDATION_SECRET_BODY="OutboundWebhookOneTimeSecret";
 
-var WEBHOOK_VERIFICATION_KEYS=["35fijs1ajc11j8ptzncgk12bcjb3vyf2", "95fijs1ajc11j9ptzncgk00bcjb3vyf2"];
-var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-IBM-OUTBOUND-TOKEN".toLowerCase();
+var WEBHOOK_VERIFICATION_KEYS=["qc7mkupkaqupu6tlen5jz9mf7cfuhbhs", "95fijs1ajc11j9ptzncgk00bcjb3vyf2"];
+var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-OUTBOUND-TOKEN".toLowerCase();
 
 // create a new express server
 var app = express();
@@ -37,14 +37,14 @@ app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 
 function rawBody(req, res, next) {
-  req.setEncoding('utf8');
-  req.rawBody = '';
-  req.on('data', function(chunk) {
-    req.rawBody += chunk;
-  });
-  req.on('end', function(){
-    next();
-  });
+	var buffers = [];
+	req.on('data', function(chunk) {
+		buffers.push(chunk);  
+	});
+	req.on('end', function(){
+		req.rawBody = Buffer.concat(buffers);
+		next();
+	});
 }
 
 app.use(rawBody);
@@ -89,8 +89,9 @@ app.get("/webhook", function(req, res) {
   });
 });
 
-
 app.get("/webhook/eventlog", function(req, res) {
+//	var eventlogname = req.params.eventlog;
+	console.log("###", eventlogname);
 	var clienthost = "";
 	var ip = req.connection.remoteAddress;
 	if (req.headers['x-forwarded-for'] !== undefined) {
@@ -109,6 +110,7 @@ app.get("/webhook/eventlog", function(req, res) {
 				clienthost="client ip=" + ip + " not resolvable";
 			}
 		}
+//		valdiateUrlGetRequest(req, res, eventlogname, clienthost);
 		valdiateUrlGetRequest(req, res, "eventlog", clienthost);
 	});
 });
@@ -151,12 +153,11 @@ function getTime() {
 
 function logReceivedWebhook(req, res, endpoint, clienthost) {
 	var rawbody = req.rawBody;
-  	var jsonbody= JSON.parse(rawbody, 'utf8');
+	var jsonbody= JSON.parse(rawbody, 'utf8');
 	var stringJsonbody = JSON.stringify(jsonbody);
-
 	var verificationToken = req.headers[WEBHOOK_VERIFICATION_TOKEN_HEADER];
 
-	if ( verificationToken !== undefined && verifyPayload(verificationToken, stringJsonbody) === true ) {
+	if ( verificationToken !== undefined && verifyPayload(verificationToken, rawbody) === true ) {
 		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /webhook/" + endpoint + ": " + stringJsonbody + ", response: status 200";
 		eventHandler.emit('webhook-event', log);
 		res.status(200).end();
@@ -182,10 +183,30 @@ function valdiateUrlGetRequest(req, res, endpoint, clienthost) {
 function verifyPayload(verificationToken, payload) {
 	for (var index in WEBHOOK_VERIFICATION_KEYS) {
 		var hash = crypto.createHmac('sha256', WEBHOOK_VERIFICATION_KEYS[index]).update(payload).digest('hex')
-
-		if (hash == verificationToken) {
+		if (hash === verificationToken) {
 			return true;
 		}
 	}
 	return false;
 }
+
+function getBytes(str) {
+  var bytes = [], char;
+  str = encodeURI(str);
+
+  while (str.length) {
+    char = str.slice(0, 1);
+    str = str.slice(1);
+
+    if ('%' !== char) {
+      bytes.push(char.charCodeAt(0));
+    } else {
+      char = str.slice(0, 2);
+      str = str.slice(2);
+
+      bytes.push(parseInt(char, 16));
+    }
+  }
+
+  return bytes;
+};
