@@ -24,8 +24,16 @@ var df = require('dateformat');
 var URL_VALIDATION_SECRET_HEADER="X-OUTBOUND-ONETIME-SECRET".toLowerCase();
 var URL_VALIDATION_SECRET_BODY="OutboundWebhookOneTimeSecret";
 
-var WEBHOOK_VERIFICATION_KEYS=["qc7mkupkaqupu6tlen5jz9mf7cfuhbhs", "95fijs1ajc11j9ptzncgk00bcjb3vyf2"];
+var WEBHOOK_VERIFICATION_KEYS={"eventlog": "64tsghvdv74694i2c3hr1xp1mu4xtoo7",
+							   "teamhook1": "9yr83o1bti7z4tlvbyktlcnkw0d3z24",
+							   "teamhook2": "",
+							   "teamhook3": "",
+							   "teamhook4": "",
+							   "teamhook5": ""
+							  };
 var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-OUTBOUND-TOKEN".toLowerCase();
+var WEBHOOK_ORDER_INDEX_HEADER="X-OUTBOUND-INDEX".toLowerCase();
+var WEBHOOK_RETRY_COUNT_HEADER="X-OUTBOUND-RETRY-COUNT".toLowerCase();
 
 // create a new express server
 var app = express();
@@ -35,6 +43,7 @@ app.use(express.static(__dirname + '/public'));
 
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
+
 
 function rawBody(req, res, next) {
 	var buffers = [];
@@ -106,60 +115,6 @@ app.get("/:teamhook", function(req, res) {
 	}
 });
 
-
-app.get("/webhook/eventlog", function(req, res) {
-	var clienthost = "";
-	var ip = req.connection.remoteAddress;
-	if (req.headers['x-forwarded-for'] !== undefined) {
-		var value = req.headers['x-forwarded-for'];
-		var ips = value.split(',');
-		ip = ips[0];
-	}
-	
-	dns.reverse(ip,  function(err, hostnames){
-		if(err){
-			clienthost="client ip=" + ip + " not resolvable";
-		} else {
-			if (hostnames.length >= 1) {
-				clienthost=hostnames[0];
-			} else {
-				clienthost="client ip=" + ip + " not resolvable";
-			}
-		}
-		valdiateUrlGetRequest(req, res, "eventlog", clienthost);
-	});
-});
-
-app.get("/teamhooks/:teamhook", function(req, res) {
-	var endpoint = req.params.teamhook;
-
-	if (endpoint.indexOf('teamhook') != 0) {
-		res.status(404).end();
-	} else {
-
-		var clienthost = "";
-		var ip = req.connection.remoteAddress;
-		if (req.headers['x-forwarded-for'] !== undefined) {
-			var value = req.headers['x-forwarded-for'];
-			var ips = value.split(',');
-			ip = ips[0];
-		}
-		
-		dns.reverse(ip,  function(err, hostnames){
-			if(err){
-				clienthost="client ip=" + ip + " not resolvable";
-			} else {
-				if (hostnames.length >= 1) {
-					clienthost=hostnames[0];
-				} else {
-					clienthost="client ip=" + ip + " not resolvable";
-				}
-			}
-			valdiateUrlGetRequest(req, res, endpoint, clienthost);
-		});
-	}
-});
-
 // first demo webhook endpoint
 app.post("/webhook/eventlog", function(req, res) {
 	var clienthost = "";
@@ -180,7 +135,7 @@ app.post("/webhook/eventlog", function(req, res) {
 				clienthost="client ip=" + ip + " not resolvable";
 			}
 		}
-		logReceivedWebhook(req, res, "eventlog", clienthost);
+		handleRequest(req, res, "eventlog", clienthost);
 	});
 });
 
@@ -209,7 +164,7 @@ app.post("/teamhooks/:teamhook", function(req, res) {
 					clienthost="client ip=" + ip + " not resolvable";
 				}
 			}
-			logReceivedWebhook(req, res, endpoint, clienthost);
+			handleRequest(req, res, endpoint, clienthost);
 		});
 	}
 });
@@ -240,52 +195,67 @@ function getTime() {
 	return df(new Date(), 'HH:MM:ss.l');
 }
 
-function logReceivedWebhook(req, res, endpoint, clienthost) {
-	var rawbody = req.rawBody;
-	var jsonbody= JSON.parse(rawbody, 'utf8');
-	var stringJsonbody = JSON.stringify(jsonbody);
-	var verificationToken = req.headers[WEBHOOK_VERIFICATION_TOKEN_HEADER];
-
+function handleRequest(request, response, endpoint, clienthost) {
 	var urlpath="webhook";
 	if (endpoint.indexOf('teamhook') == 0) {
 		urlpath="teamhooks";
 	}
-	if ( verificationToken !== undefined && verifyPayload(verificationToken, rawbody) === true ) {
-		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /"+urlpath+"/" + endpoint + ": " + stringJsonbody + ", response: status 200";
-//		eventHandler.emit('webhook-event', log);
-		eventHandler.emit(endpoint.toString(), log);
-		res.status(200).end();
-	} else {
-		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /"+urlpath+"/" + endpoint + ": received event ignored - could not be verified that it comes from Toscana, response: status 200";
-//		eventHandler.emit('webhook-event', log);
-		eventHandler.emit(endpoint.toString(), log);
-		res.status(200).end();
-	}	
-}
 
-function valdiateUrlGetRequest(req, res, endpoint, clienthost) {
-	if (req.headers[URL_VALIDATION_SECRET_HEADER] !== undefined) {
-		var urlpath="webhook";
-		if (endpoint.indexOf('teamhook') == 0) {
-			urlpath="teamhooks";
-		}
-		var jsonresponse = '{"' + URL_VALIDATION_SECRET_BODY + '":"' + req.headers[URL_VALIDATION_SECRET_HEADER] + '"}';
-		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /" + urlpath + "/" + endpoint + ": " + ", status ok, response: " + jsonresponse;
-//		eventHandler.emit('webhook-event', log);
+    if ( ! verifySender(endpoint, request.headers, request.rawBody) ) {
+		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /"+urlpath+"/" + endpoint + ": received request ignored - could not be verified that it comes from Toscana,<br>body=" + request.rawBody.toString() + ", response: status 200";
 		eventHandler.emit(endpoint.toString(), log);
-		res.writeHead(200, {"Content-Type": "application/json"});
-		res.end(jsonresponse);
+		response.status(200).end();
+		return;
 	} else {
-		res.status(400).end();
+		var body = JSON.parse(request.rawBody.toString());
+		var stringJsonbody = JSON.stringify(body);
+		var eventType = body.type;
+		if (eventType == "verification")
+			handleVerificationRequest(endpoint, response, body.challenge, urlpath, clienthost);
+		else {
+			var orderIndex = request.headers[WEBHOOK_ORDER_INDEX_HEADER];
+			var retryCount = request.headers[WEBHOOK_RETRY_COUNT_HEADER];
+			
+			var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /"+urlpath+"/" + endpoint + ": " + stringJsonbody +
+				", X-OUTBOUND-ORDER-INDEX=" + orderIndex + ", X-OUTBOUND-RETRY-COUNT=" + retryCount + ", response: status 200";
+			eventHandler.emit(endpoint.toString(), log);
+			response.status(200).end();
+		}
 	}
 }
 
-function verifyPayload(verificationToken, payload) {
-	for (var index in WEBHOOK_VERIFICATION_KEYS) {
-		var hash = crypto.createHmac('sha256', WEBHOOK_VERIFICATION_KEYS[index]).update(payload).digest('hex')
-		if (hash === verificationToken) {
-			return true;
-		}
-	}
-	return false;
+function verifySender(endpoint, headers, rawbody)
+{
+    var headerToken = headers[WEBHOOK_VERIFICATION_TOKEN_HEADER];
+	var endpointSecret =  WEBHOOK_VERIFICATION_KEYS[endpoint];
+    var expectedToken = crypto
+		.createHmac('sha256', endpointSecret)
+		.update(rawbody)
+		.digest('hex');
+
+    if (expectedToken === headerToken) {
+		return Boolean(true);
+    }
+	return Boolean(false);
+}
+
+function handleVerificationRequest(endpoint, response, challenge, urlpath, clienthost)
+{
+    var responseBodyObject = { "response" : challenge };
+    var responseBodyString = JSON.stringify(responseBodyObject);
+	var endpointSecret =  WEBHOOK_VERIFICATION_KEYS[endpoint];
+    var responseToken = crypto
+		.createHmac('sha256', endpointSecret)
+        .update(responseBodyString)
+        .digest('hex');
+    response.writeHead(200,
+                       {
+                           "Content-Type" : "application/json; charset=utf-8",
+                           "X-OUTBOUND-TOKEN" : responseToken
+                       });
+    response.write
+	var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /" + urlpath + "/" + endpoint + ": " + "endpoint verification request, status ok, response: " + responseBodyString + ", X-OUTBOUND-TOKEN: " + responseToken;
+	eventHandler.emit(endpoint.toString(), log);
+
+    response.end(responseBodyString);
 }
