@@ -1,6 +1,7 @@
-# Node.js Toscana Webhook Demo
+# Node.js Watson Work Services Demo Template
 
-The Webhook Demo demonstrates a simple, reusable Node.js web application based on the Express framework.
+The Watson Work Services Demo Template is meant to be forked and used for learning about Watson Work Services platform.
+It originated from the Bluemix reusable Node.js web application based on the Express framework with additions from Juergen Schmidt
 
 ## Run the app locally
 
