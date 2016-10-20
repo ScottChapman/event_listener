@@ -2,7 +2,9 @@ applications:
 - path: .
   memory: 256M
   instances: 1
-  domain: eu-gb.mybluemix.net
-  name: webhook-demo-bluemix
-  host: webhook-demo-bluemix
+  domain: mybluemix.net
+  name: wws-demo
+  host: wws-demo
   disk_quota: 1024M
+  env:
+   ENABLE_BLUEMIX_DEV_MODE: "false"
