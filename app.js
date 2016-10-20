@@ -25,7 +25,7 @@ var URL_VALIDATION_SECRET_HEADER="X-OUTBOUND-ONETIME-SECRET".toLowerCase();
 var URL_VALIDATION_SECRET_BODY="OutboundWebhookOneTimeSecret";
 
 var WEBHOOK_VERIFICATION_KEYS={"eventlog": "64tsghvdv74694i2c3hr1xp1mu4xtoo7",
-							   "teamhook1": "9yr83o1bti7z4tlvbyktlcnkw0d3z24",
+							   "teamhook1": "kfhhhgpgrkop0bfiai64kmi4at2dm29c",
 							   "teamhook2": "",
 							   "teamhook3": "",
 							   "teamhook4": "",
