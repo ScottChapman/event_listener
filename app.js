@@ -21,15 +21,11 @@ var fs = require("fs");
 var bodyParser = require('body-parser');
 var df = require('dateformat');
 
+
 var URL_VALIDATION_SECRET_HEADER="X-OUTBOUND-ONETIME-SECRET".toLowerCase();
 var URL_VALIDATION_SECRET_BODY="OutboundWebhookOneTimeSecret";
 
-var WEBHOOK_VERIFICATION_KEYS={"eventlog": "64tsghvdv74694i2c3hr1xp1mu4xtoo7",
-							   "teamhook1": "kfhhhgpgrkop0bfiai64kmi4at2dm29c",
-							   "teamhook2": "",
-							   "teamhook3": "",
-							   "teamhook4": "",
-							   "teamhook5": ""
+var WEBHOOK_VERIFICATION_KEYS={"eventlog": "2i88ycvab6ra8h7s2c769r7kwwgtidlr"
 							  };
 var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-OUTBOUND-TOKEN".toLowerCase();
 var WEBHOOK_ORDER_INDEX_HEADER="X-OUTBOUND-INDEX".toLowerCase();
@@ -48,7 +44,7 @@ app.set('view engine', 'html');
 function rawBody(req, res, next) {
 	var buffers = [];
 	req.on('data', function(chunk) {
-		buffers.push(chunk);  
+		buffers.push(chunk);
 	});
 	req.on('end', function(){
 		req.rawBody = Buffer.concat(buffers);
@@ -69,6 +65,8 @@ var httpServer = http.createServer(app).listen(appEnv.port, '0.0.0.0', function(
 });
 var io = require("socket.io").listen(httpServer);
 
+console.log("Remember to edit secret!");
+
 // start server on the specified port and binding host
 //app.listen(appEnv.port, '0.0.0.0', function() {
   // print a message when the server starts listening
@@ -85,6 +83,9 @@ function errorHandler(err, req, res, next) {
 
 // demo page showing incoming and received webhook requests and events
 app.get("/webhook", function(req, res) {
+
+	console.log("RECEIVED /webhook");
+
 	fs.readFile(__dirname + "/public/webhook-event-log.html", 'utf-8', function(err, data) {
     if (err) {
       logger.info(err);
@@ -124,7 +125,9 @@ app.post("/webhook/eventlog", function(req, res) {
 		var ips = value.split(',');
 		ip = ips[0];
 	}
-		
+
+	console.log("app.post(/webhook/eventlog");
+
 	dns.reverse(ip,  function(err, hostnames){
 		if(err){
 			clienthost="client ip=" + ip + " not resolvable";
@@ -153,7 +156,7 @@ app.post("/teamhooks/:teamhook", function(req, res) {
 			var ips = value.split(',');
 			ip = ips[0];
 		}
-		
+
 		dns.reverse(ip,  function(err, hostnames){
 			if(err){
 				clienthost="client ip=" + ip + " not resolvable";
@@ -196,10 +199,13 @@ function getTime() {
 }
 
 function handleRequest(request, response, endpoint, clienthost) {
+
 	var urlpath="webhook";
 	if (endpoint.indexOf('teamhook') == 0) {
 		urlpath="teamhooks";
 	}
+
+	console.log("handleRequest");
 
     if ( ! verifySender(endpoint, request.headers, request.rawBody) ) {
 		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /"+urlpath+"/" + endpoint + ": received request ignored - could not be verified that it comes from Toscana,<br>body=" + request.rawBody.toString() + ", response: status 200";
@@ -215,7 +221,7 @@ function handleRequest(request, response, endpoint, clienthost) {
 		else {
 			var orderIndex = request.headers[WEBHOOK_ORDER_INDEX_HEADER];
 			var retryCount = request.headers[WEBHOOK_RETRY_COUNT_HEADER];
-			
+
 			var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /"+urlpath+"/" + endpoint + ": " + stringJsonbody +
 				", X-OUTBOUND-ORDER-INDEX=" + orderIndex + ", X-OUTBOUND-RETRY-COUNT=" + retryCount + ", response: status 200";
 			eventHandler.emit(endpoint.toString(), log);
@@ -226,6 +232,8 @@ function handleRequest(request, response, endpoint, clienthost) {
 
 function verifySender(endpoint, headers, rawbody)
 {
+	console.log("verifySender");
+
     var headerToken = headers[WEBHOOK_VERIFICATION_TOKEN_HEADER];
 	var endpointSecret =  WEBHOOK_VERIFICATION_KEYS[endpoint];
     var expectedToken = crypto
@@ -233,9 +241,14 @@ function verifySender(endpoint, headers, rawbody)
 		.update(rawbody)
 		.digest('hex');
 
+		console.log("expectedToken, headerToken" + expectedToken, headerToken);
+
     if (expectedToken === headerToken) {
+			console.log("expectedToken === headerToken");
+
 		return Boolean(true);
     }
+		console.log("expectedToken !== headerToken");
 	return Boolean(false);
 }
 
@@ -243,17 +256,24 @@ function handleVerificationRequest(endpoint, response, challenge, urlpath, clien
 {
     var responseBodyObject = { "response" : challenge };
     var responseBodyString = JSON.stringify(responseBodyObject);
-	var endpointSecret =  WEBHOOK_VERIFICATION_KEYS[endpoint];
+		var endpointSecret =  WEBHOOK_VERIFICATION_KEYS[endpoint];
     var responseToken = crypto
 		.createHmac('sha256', endpointSecret)
         .update(responseBodyString)
         .digest('hex');
+
+		console.log("verification attempt!");
+		console.log("responseBodyObject: " + responseBodyObject);
+		console.log("responseBodyString: " + responseBodyString);
+		console.log("endpointSecret: " + endpointSecret);
+		console.log("responseToken: " + responseToken);
+
     response.writeHead(200,
                        {
                            "Content-Type" : "application/json; charset=utf-8",
                            "X-OUTBOUND-TOKEN" : responseToken
                        });
-    response.write
+    response.write;
 	var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /" + urlpath + "/" + endpoint + ": " + "endpoint verification request, status ok, response: " + responseBodyString + ", X-OUTBOUND-TOKEN: " + responseToken;
 	eventHandler.emit(endpoint.toString(), log);
 
