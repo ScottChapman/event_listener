@@ -25,8 +25,7 @@ var df = require('dateformat');
 var URL_VALIDATION_SECRET_HEADER="X-OUTBOUND-ONETIME-SECRET".toLowerCase();
 var URL_VALIDATION_SECRET_BODY="OutboundWebhookOneTimeSecret";
 
-var WEBHOOK_VERIFICATION_KEYS={"eventlog": "2i88ycvab6ra8h7s2c769r7kwwgtidlr"
-							  };
+var WEBHOOK_VERIFICATION_KEYS={"eventlog": "2i88ycvab6ra8h7s2c769r7kwwgtidlr"};
 var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-OUTBOUND-TOKEN".toLowerCase();
 var WEBHOOK_ORDER_INDEX_HEADER="X-OUTBOUND-INDEX".toLowerCase();
 var WEBHOOK_RETRY_COUNT_HEADER="X-OUTBOUND-RETRY-COUNT".toLowerCase();
@@ -65,8 +64,6 @@ var httpServer = http.createServer(app).listen(appEnv.port, '0.0.0.0', function(
 });
 var io = require("socket.io").listen(httpServer);
 
-console.log("Remember to edit secret!");
-
 // start server on the specified port and binding host
 //app.listen(appEnv.port, '0.0.0.0', function() {
   // print a message when the server starts listening
@@ -83,8 +80,6 @@ function errorHandler(err, req, res, next) {
 
 // demo page showing incoming and received webhook requests and events
 app.get("/webhook", function(req, res) {
-
-	console.log("RECEIVED /webhook");
 
 	fs.readFile(__dirname + "/public/webhook-event-log.html", 'utf-8', function(err, data) {
     if (err) {
@@ -125,8 +120,6 @@ app.post("/webhook/eventlog", function(req, res) {
 		var ips = value.split(',');
 		ip = ips[0];
 	}
-
-	console.log("app.post(/webhook/eventlog");
 
 	dns.reverse(ip,  function(err, hostnames){
 		if(err){
@@ -205,8 +198,6 @@ function handleRequest(request, response, endpoint, clienthost) {
 		urlpath="teamhooks";
 	}
 
-	console.log("handleRequest");
-
     if ( ! verifySender(endpoint, request.headers, request.rawBody) ) {
 		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /"+urlpath+"/" + endpoint + ": received request ignored - could not be verified that it comes from Toscana,<br>body=" + request.rawBody.toString() + ", response: status 200";
 		eventHandler.emit(endpoint.toString(), log);
@@ -232,24 +223,24 @@ function handleRequest(request, response, endpoint, clienthost) {
 
 function verifySender(endpoint, headers, rawbody)
 {
-	console.log("verifySender");
+	// console.log("verifySender");
 
     var headerToken = headers[WEBHOOK_VERIFICATION_TOKEN_HEADER];
-	var endpointSecret =  WEBHOOK_VERIFICATION_KEYS[endpoint];
+	  var endpointSecret =  WEBHOOK_VERIFICATION_KEYS[endpoint];
     var expectedToken = crypto
 		.createHmac('sha256', endpointSecret)
 		.update(rawbody)
 		.digest('hex');
 
-		console.log("expectedToken, headerToken" + expectedToken, headerToken);
+		// console.log("expectedToken, headerToken" + expectedToken);
+		// console.log("headerToken" + headerToken);
 
     if (expectedToken === headerToken) {
-			console.log("expectedToken === headerToken");
-
-		return Boolean(true);
+		   return Boolean(true);
     }
-		console.log("expectedToken !== headerToken");
-	return Boolean(false);
+		else {
+			return Boolean(false);
+		}
 }
 
 function handleVerificationRequest(endpoint, response, challenge, urlpath, clienthost)
@@ -262,11 +253,11 @@ function handleVerificationRequest(endpoint, response, challenge, urlpath, clien
         .update(responseBodyString)
         .digest('hex');
 
-		console.log("verification attempt!");
-		console.log("responseBodyObject: " + responseBodyObject);
-		console.log("responseBodyString: " + responseBodyString);
-		console.log("endpointSecret: " + endpointSecret);
-		console.log("responseToken: " + responseToken);
+		// console.log("verification attempt!");
+		// console.log("responseBodyObject: " + responseBodyObject);
+		// console.log("responseBodyString: " + responseBodyString);
+		// console.log("endpointSecret: " + endpointSecret);
+		// console.log("responseToken: " + responseToken);
 
     response.writeHead(200,
                        {
@@ -274,8 +265,8 @@ function handleVerificationRequest(endpoint, response, challenge, urlpath, clien
                            "X-OUTBOUND-TOKEN" : responseToken
                        });
     response.write;
-	var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /" + urlpath + "/" + endpoint + ": " + "endpoint verification request, status ok, response: " + responseBodyString + ", X-OUTBOUND-TOKEN: " + responseToken;
-	eventHandler.emit(endpoint.toString(), log);
+		var log = '[' + getTime() + "]:[request comes from: " + clienthost + "]: /" + urlpath + "/" + endpoint + ": " + "endpoint verification request, status ok, response: " + responseBodyString + ", X-OUTBOUND-TOKEN: " + responseToken;
+		eventHandler.emit(endpoint.toString(), log);
 
     response.end(responseBodyString);
 }
