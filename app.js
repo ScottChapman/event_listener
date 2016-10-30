@@ -87,7 +87,7 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 					var retryCount = req.headers[WEBHOOK_RETRY_COUNT_HEADER];
 
 					console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
-					console.log(stringJsonbody);
+					console.log("Body:" + stringJsonbody);
 
 					res.status(200).end();
 			}
@@ -127,7 +127,7 @@ function handleVerificationRequest(response, challenge)
                            "Content-Type" : "application/json; charset=utf-8",
                            "X-OUTBOUND-TOKEN" : responseToken
                        });
-    
+
 
 		console.log("-");
 		console.log("VERIFICATION BODY: " + responseBodyString);
