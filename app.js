@@ -6,21 +6,21 @@
 
 // This application uses express as its web server
 // for more info, see: http://expressjs.com
-var express = require('express');
+var express = require("express");
 var http = require("http");
-var crypto = require('crypto');
+var crypto = require("crypto");
 
 // cfenv provides access to your Cloud Foundry environment
 // for more info, see: https://www.npmjs.com/package/cfenv
-var cfenv = require('cfenv');
+var cfenv = require("cfenv");
 
 // Place here the webhook secret received during app registration
 const WEBHOOK_SECRET = "2i88ycvab6ra8h7s2c769r7kwwgtidlr";
 const WEBHOOK_CALLBACK = "/webhook/eventlog";
 
 
-var URL_VALIDATION_SECRET_HEADER="X-OUTBOUND-ONETIME-SECRET".toLowerCase();
-var URL_VALIDATION_SECRET_BODY="OutboundWebhookOneTimeSecret";
+
+
 var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-OUTBOUND-TOKEN".toLowerCase();
 var WEBHOOK_ORDER_INDEX_HEADER="X-OUTBOUND-INDEX".toLowerCase();
 var WEBHOOK_RETRY_COUNT_HEADER="X-OUTBOUND-RETRY-COUNT".toLowerCase();
@@ -29,7 +29,7 @@ var WEBHOOK_RETRY_COUNT_HEADER="X-OUTBOUND-RETRY-COUNT".toLowerCase();
 var app = express();
 
 // serve the files out of ./public as our main files
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(__dirname + "/public"));
 
 
 // app.engine('html', require('ejs').renderFile);
@@ -37,10 +37,10 @@ app.use(express.static(__dirname + '/public'));
 
 function rawBody(req, res, next) {
 	var buffers = [];
-	req.on('data', function(chunk) {
+	req.on("data", function(chunk) {
 		buffers.push(chunk);
 	});
-	req.on('end', function(){
+	req.on("end", function(){
 		req.rawBody = Buffer.concat(buffers);
 		next();
 	});
@@ -51,7 +51,7 @@ function errorHandler(err, req, res, next) {
     return next(err);
   }
   res.status(500);
-  res.render('error', { error: err });
+  res.render("error", { error: err });
 }
 
 app.use(rawBody);
@@ -60,10 +60,10 @@ app.use(errorHandler);
 // get the app environment from Cloud Foundry
 var appEnv = cfenv.getAppEnv();
 
-var httpServer = http.createServer(app).listen(appEnv.port, '0.0.0.0', function() {
-  console.log("Server starting on " + appEnv.url);
+var httpServer = http.createServer(app).listen(appEnv.port, "0.0.0.0", function() {
+  console.log("wws-demo Server starting on " + appEnv.url);
 });
-var io = require("socket.io").listen(httpServer);
+
 
 
 
@@ -75,11 +75,10 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 			console.log(req.rawBody.toString());
 			res.status(200).end();
 			return;
-	} else {
-			var body = JSON.parse(req.rawBody.toString());
+	} var body = JSON.parse(req.rawBody.toString());
 			var stringJsonbody = JSON.stringify(body);
 			var eventType = body.type;
-			if (eventType == "verification")
+			if (eventType === "verification")
 					handleVerificationRequest(res, body.challenge);
 			else {
 					var orderIndex = req.headers[WEBHOOK_ORDER_INDEX_HEADER];
@@ -93,7 +92,6 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 
 					res.status(200).end();
 			}
-	}
 
 });
 
@@ -104,16 +102,14 @@ function verifySender(headers, rawbody)
     var headerToken = headers[WEBHOOK_VERIFICATION_TOKEN_HEADER];
 	  var endpointSecret =  WEBHOOK_SECRET;
     var expectedToken = crypto
-		.createHmac('sha256', endpointSecret)
+		.createHmac("sha256", endpointSecret)
 		.update(rawbody)
-		.digest('hex');
+		.digest("hex");
 
     if (expectedToken === headerToken) {
 		   return Boolean(true);
     }
-		else {
-			return Boolean(false);
-		}
+	return Boolean(false);
 }
 
 function handleVerificationRequest(response, challenge)
@@ -123,16 +119,16 @@ function handleVerificationRequest(response, challenge)
 		var endpointSecret =  WEBHOOK_SECRET;
 
     var responseToken = crypto
-		.createHmac('sha256', endpointSecret)
+		.createHmac("sha256", endpointSecret)
         .update(responseBodyString)
-        .digest('hex');
+        .digest("hex");
 
     response.writeHead(200,
                        {
                            "Content-Type" : "application/json; charset=utf-8",
                            "X-OUTBOUND-TOKEN" : responseToken
                        });
-    response.write;
+    
 
 		console.log("-");
 		console.log("VERIFICATION BODY: " + responseBodyString);
