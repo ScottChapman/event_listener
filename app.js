@@ -15,7 +15,9 @@ var crypto = require("crypto");
 var cfenv = require("cfenv");
 
 // Place here the webhook secret received during app registration
-const WEBHOOK_SECRET = "2i88ycvab6ra8h7s2c769r7kwwgtidlr";
+//const WEBHOOK_SECRET = "2i88ycvab6ra8h7s2c769r7kwwgtidlr";
+const WEBHOOK_SECRET = "mwlpai9buwlt9mlbndsvlrhjemovntwh";
+
 const WEBHOOK_CALLBACK = "/webhook/eventlog";
 
 
@@ -71,7 +73,7 @@ var httpServer = http.createServer(app).listen(appEnv.port, "0.0.0.0", function(
 app.post(WEBHOOK_CALLBACK, function(req, res) {
 
 	if (!verifySender(req.headers, req.rawBody)) {
-			console.log("------ UNKNOWN CALLER ! -------------");
+			console.log("Cannot verify caller ! -------------");
 			console.log(req.rawBody.toString());
 			res.status(200).end();
 			return;
@@ -84,11 +86,8 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 					var orderIndex = req.headers[WEBHOOK_ORDER_INDEX_HEADER];
 					var retryCount = req.headers[WEBHOOK_RETRY_COUNT_HEADER];
 
-					console.log("-");
-					console.log("OUTBOUND-RETRY-COUNT: " + retryCount);
-					console.log("X-OUTBOUND-ORDER-INDEX: " + orderIndex);
+					console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
 					console.log(stringJsonbody);
-					console.log("-");
 
 					res.status(200).end();
 			}
