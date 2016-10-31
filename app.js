@@ -87,7 +87,9 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 					var retryCount = req.headers[WEBHOOK_RETRY_COUNT_HEADER];
 
 					console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
-					console.log(stringJsonbody + " at " + Date (body.time));
+					console.log(stringJsonbody);
+					console.log("Event originated at " + Date (body.time));
+ 					console.log("Latency: " + (Date.now() - body.time) );
 
 					res.status(200).end();
 			}
