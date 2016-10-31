@@ -1,4 +1,4 @@
-/*eslint-env node*/
+/*eslint-env node, express*/
 
 //------------------------------------------------------------------------------
 // node.js starter application for Bluemix
@@ -88,7 +88,7 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 
 					console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
 					console.log(stringJsonbody);
-					console.log("Event originated at " + Date (body.time));
+					console.log("Event original time:" + Date (body.time));
  					console.log("Latency: " + (Date.now() - body.time) );
 
 					res.status(200).end();
