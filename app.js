@@ -86,8 +86,9 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 					var orderIndex = req.headers[WEBHOOK_ORDER_INDEX_HEADER];
 					var retryCount = req.headers[WEBHOOK_RETRY_COUNT_HEADER];
 
+					var d = new Date (body.time);
 					console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
-					console.log("Body:" + stringJsonbody);
+					console.log("Body:" + stringJsonbody + " at " + d);
 
 					res.status(200).end();
 			}
