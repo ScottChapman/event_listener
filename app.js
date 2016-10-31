@@ -86,9 +86,8 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 					var orderIndex = req.headers[WEBHOOK_ORDER_INDEX_HEADER];
 					var retryCount = req.headers[WEBHOOK_RETRY_COUNT_HEADER];
 
-					var d = new Date (body.time);
 					console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
-					console.log("Body:" + stringJsonbody + " at " + d);
+					console.log(stringJsonbody + " at " + Date (body.time));
 
 					res.status(200).end();
 			}
@@ -116,7 +115,7 @@ function handleVerificationRequest(response, challenge)
 {
     var responseBodyObject = { "response" : challenge };
     var responseBodyString = JSON.stringify(responseBodyObject);
-		var endpointSecret =  WEBHOOK_SECRET;
+    var endpointSecret =  WEBHOOK_SECRET;
 
     var responseToken = crypto
 		.createHmac("sha256", endpointSecret)
@@ -129,11 +128,9 @@ function handleVerificationRequest(response, challenge)
                            "X-OUTBOUND-TOKEN" : responseToken
                        });
 
-
-		console.log("-");
-		console.log("VERIFICATION BODY: " + responseBodyString);
-		console.log("VERIFICATION X-OUTBOUND-TOKEN: " + responseToken);
-		console.log("-");
+	console.log ("Verification request processed");
+//		console.log("VERIFICATION BODY: " + responseBodyString);
+//		console.log("VERIFICATION X-OUTBOUND-TOKEN: " + responseToken);
 
     response.end(responseBodyString);
 }
