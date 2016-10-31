@@ -129,10 +129,9 @@ function handleVerificationRequest(response, challenge)
                            "Content-Type" : "application/json; charset=utf-8",
                            "X-OUTBOUND-TOKEN" : responseToken
                        });
+		response.end(responseBodyString);
 
-	console.log ("Verification request processed");
+		console.log ("Verification request processed");
 //		console.log("VERIFICATION BODY: " + responseBodyString);
 //		console.log("VERIFICATION X-OUTBOUND-TOKEN: " + responseToken);
-
-    response.end(responseBodyString);
 }
