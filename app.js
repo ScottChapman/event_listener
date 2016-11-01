@@ -7,7 +7,6 @@
 // This application uses express as its web server
 // for more info, see: http://expressjs.com
 var express = require("express");
-var http = require("http");
 var crypto = require("crypto");
 
 // cfenv provides access to your Cloud Foundry environment
@@ -17,10 +16,7 @@ var crypto = require("crypto");
 // Place here the webhook secret received during app registration
 //const WEBHOOK_SECRET = "2i88ycvab6ra8h7s2c769r7kwwgtidlr";
 const WEBHOOK_SECRET = "mwlpai9buwlt9mlbndsvlrhjemovntwh";
-
 const WEBHOOK_CALLBACK = "/webhook_callback";
-
-
 
 
 var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-OUTBOUND-TOKEN".toLowerCase();
@@ -59,14 +55,8 @@ function errorHandler(err, req, res, next) {
 app.use(rawBody);
 app.use(errorHandler);
 
-// get the app environment from Cloud Foundry
-//var appEnv = cfenv.getAppEnv();
-//var httpServer = http.createServer(app).listen(appEnv.port, "0.0.0.0", function() {
-//  console.log("Server starting on " + appEnv.url);
-//});
-
 app.listen(process.env.PORT || 3000, () => {
-  console.log("app is listening on the port" + (process.env.PORT || 3000));
+  console.log("app is listening on port: " + (process.env.PORT || 3000));
 });
 
 
@@ -91,7 +81,6 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 					console.log(stringJsonbody);
 					console.log("Event original time:" + Date (body.time));
  					console.log("Latency: " + (Date.now() - body.time) );
- 					console.log ("Hello Vijay");
 
 					res.status(200).end();
 			}
@@ -103,7 +92,7 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 function verifySender(headers, rawbody)
 {
     var headerToken = headers[WEBHOOK_VERIFICATION_TOKEN_HEADER];
-	  var endpointSecret =  WEBHOOK_SECRET;
+    var endpointSecret =  WEBHOOK_SECRET;
     var expectedToken = crypto
 		.createHmac("sha256", endpointSecret)
 		.update(rawbody)

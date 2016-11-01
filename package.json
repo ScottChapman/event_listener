@@ -7,7 +7,6 @@
 	},
 	"dependencies": {
 		"express": "4.13.x",
-		"cfenv": "1.0.x",
 		"body-parser": "1.15.2",
 		"dateformat": "1.0.12",
 		"event": "^1.0.0",
