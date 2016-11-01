@@ -6,7 +6,7 @@
       "Org": "vfrancis@us.ibm.com",
       "Space": "toscana-platform"
     },
-    "Name": "wws-demo",
+    "Name": "events-listener",
     "Instrumentation": {}
   },
   "Path": "manifest.yml",

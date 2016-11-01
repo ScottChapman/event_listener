@@ -18,7 +18,7 @@ var cfenv = require("cfenv");
 //const WEBHOOK_SECRET = "2i88ycvab6ra8h7s2c769r7kwwgtidlr";
 const WEBHOOK_SECRET = "mwlpai9buwlt9mlbndsvlrhjemovntwh";
 
-const WEBHOOK_CALLBACK = "/webhook/eventlog";
+const WEBHOOK_CALLBACK = "/webhook_callback";
 
 
 
@@ -63,7 +63,7 @@ app.use(errorHandler);
 var appEnv = cfenv.getAppEnv();
 
 var httpServer = http.createServer(app).listen(appEnv.port, "0.0.0.0", function() {
-  console.log("wws-demo Server starting on " + appEnv.url);
+  console.log("Server starting on " + appEnv.url);
 });
 
 
