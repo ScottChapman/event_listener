@@ -12,7 +12,7 @@ var crypto = require("crypto");
 
 // cfenv provides access to your Cloud Foundry environment
 // for more info, see: https://www.npmjs.com/package/cfenv
-var cfenv = require("cfenv");
+//var cfenv = require("cfenv");
 
 // Place here the webhook secret received during app registration
 //const WEBHOOK_SECRET = "2i88ycvab6ra8h7s2c769r7kwwgtidlr";
@@ -60,13 +60,14 @@ app.use(rawBody);
 app.use(errorHandler);
 
 // get the app environment from Cloud Foundry
-var appEnv = cfenv.getAppEnv();
+//var appEnv = cfenv.getAppEnv();
+//var httpServer = http.createServer(app).listen(appEnv.port, "0.0.0.0", function() {
+//  console.log("Server starting on " + appEnv.url);
+//});
 
-var httpServer = http.createServer(app).listen(appEnv.port, "0.0.0.0", function() {
-  console.log("Server starting on " + appEnv.url);
+app.listen(process.env.PORT || 3000, () => {
+  console.log("app is listening on the port" + (process.env.PORT || 3000));
 });
-
-
 
 
 // first demo webhook endpoint
