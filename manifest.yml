@@ -3,8 +3,8 @@ applications:
   memory: 256M
   instances: 1
   domain: mybluemix.net
-  name: wws-demo
-  host: wws-demo
+  name: events-listener
+  host: events-listener
   disk_quota: 1024M
   env:
    ENABLE_BLUEMIX_DEV_MODE: "false"
