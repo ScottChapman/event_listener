@@ -90,7 +90,7 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 					console.log(stringJsonbody);
 					console.log("Event original time:" + Date (body.time));
  					console.log("Latency: " + (Date.now() - body.time) );
- 					console.log ("hello Vijay");
+ 					console.log ("Hello Vijay");
 
 					res.status(200).end();
 			}
