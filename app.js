@@ -1,23 +1,12 @@
 /*eslint-env node, express*/
 
-//------------------------------------------------------------------------------
-// node.js starter application for Bluemix
-//------------------------------------------------------------------------------
-
 // This application uses express as its web server
 // for more info, see: http://expressjs.com
 var express = require("express");
 var crypto = require("crypto");
 
-// cfenv provides access to your Cloud Foundry environment
-// for more info, see: https://www.npmjs.com/package/cfenv
-//var cfenv = require("cfenv");
-
-// Place here the webhook secret received during app registration
-//const WEBHOOK_SECRET = "2i88ycvab6ra8h7s2c769r7kwwgtidlr";
 const WEBHOOK_SECRET = "mwlpai9buwlt9mlbndsvlrhjemovntwh";
 const WEBHOOK_CALLBACK = "/webhook_callback";
-
 
 var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-OUTBOUND-TOKEN".toLowerCase();
 var WEBHOOK_ORDER_INDEX_HEADER="X-OUTBOUND-INDEX".toLowerCase();
@@ -28,10 +17,6 @@ var app = express();
 
 // serve the files out of ./public as our main files
 app.use(express.static(__dirname + "/public"));
-
-
-// app.engine('html', require('ejs').renderFile);
-// app.set('view engine', 'html');
 
 function rawBody(req, res, next) {
 	var buffers = [];
@@ -57,10 +42,10 @@ app.use(errorHandler);
 
 app.listen(process.env.PORT || 3000, () => {
   console.log("app is listening on port: " + (process.env.PORT || 3000));
+  console.log("\n");
 });
 
 
-// first demo webhook endpoint
 app.post(WEBHOOK_CALLBACK, function(req, res) {
 
 	if (!verifySender(req.headers, req.rawBody)) {
@@ -68,22 +53,23 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 			console.log(req.rawBody.toString());
 			res.status(200).end();
 			return;
-	} var body = JSON.parse(req.rawBody.toString());
-			var stringJsonbody = JSON.stringify(body);
-			var eventType = body.type;
-			if (eventType === "verification")
-					handleVerificationRequest(res, body.challenge);
-			else {
-					var orderIndex = req.headers[WEBHOOK_ORDER_INDEX_HEADER];
-					var retryCount = req.headers[WEBHOOK_RETRY_COUNT_HEADER];
+	}
+  var body = JSON.parse(req.rawBody.toString());
+	var stringJsonbody = JSON.stringify(body);
+	var eventType = body.type;
+	if (eventType === "verification")
+			handleVerificationRequest(res, body.challenge);
+	else {
+			var orderIndex = req.headers[WEBHOOK_ORDER_INDEX_HEADER];
+			var retryCount = req.headers[WEBHOOK_RETRY_COUNT_HEADER];
 
-					console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
-					console.log(stringJsonbody);
-					console.log("Event original time:" + Date (body.time));
- 					console.log("Latency: " + (Date.now() - body.time) );
+			console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
+			console.log(stringJsonbody);
+			console.log("Event original time:" + Date (body.time));
+				console.log("Latency: " + (Date.now() - body.time) );
 
-					res.status(200).end();
-			}
+			res.status(200).end();
+	}
 
 });
 
