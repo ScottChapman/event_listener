@@ -5,7 +5,7 @@
 var express = require("express");
 var crypto = require("crypto");
 
-const WEBHOOK_SECRET = "mwlpai9buwlt9mlbndsvlrhjemovntwh";
+var WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 const WEBHOOK_CALLBACK = "/webhook_callback";
 
 var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-OUTBOUND-TOKEN".toLowerCase();
@@ -66,7 +66,7 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 			console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
 			console.log(stringJsonbody);
 			console.log("Event original time:" + Date (body.time));
-				console.log("Latency: " + (Date.now() - body.time) );
+			console.log("Latency: " + (Date.now() - body.time) );
 
 			res.status(200).end();
 	}
