@@ -3,8 +3,6 @@ applications:
   memory: 256M
   instances: 1
   domain: mybluemix.net
-  name: events-listener
-  host: events-listener
+  name: dceventlistener
+  host: dceventlistener
   disk_quota: 1024M
-  env:
-   ENABLE_BLUEMIX_DEV_MODE: "false"
