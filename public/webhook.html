@@ -17,19 +17,23 @@
     <script src="https://code.jquery.com/jquery-1.7.1.min.js"></script>
     <script>
       var socketUrl = window.location.protocol + '//' + window.location.host;
-      console.log('socketio', socketUrl);
       // creating a new websocket
       var socket = io.connect( socketUrl );
 
       // on every notification (new received outboud request event) we update the log
       socket.on('webhook-event', function (data) {
+        if (data.annotationPayload) {
+          data.annotationPayload = JSON.parse(data.annotationPayload)
+        }
+        var currentDate = new Date();
+        var text = '*** Type: ' + data.type + ' *** ' + '<br/>Time: ' + currentDate + '<br/>' + ' Payload: <pre>' + JSON.stringify(data,null,'    ') + '</pre>';
         // convert the json string into a valid javascript object
         //var _data = JSON.parse(data);
         $('time').html('Last Update:' + new Date());
 
         var node = document.getElementById("logs");
         var newNode = document.createElement("li");
-        newNode.innerHTML = data;
+        newNode.innerHTML = text;
         node.insertBefore(newNode, node.firstChild);
       });
     </script>

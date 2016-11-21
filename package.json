@@ -8,6 +8,7 @@
   "dependencies": {
     "cfenv": "^1.0.3",
     "express": "4.13.x",
+    "moment": "^2.16.0",
     "socket.io": "^1.5.1"
   },
   "repository": {},

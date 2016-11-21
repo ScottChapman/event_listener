@@ -8,6 +8,7 @@ var http = require("http");
 var cfenv = require('cfenv');
 var events = require("events");
 var eventHandler = new events.EventEmitter();
+var moment = require('moment');
 
 // var WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 var WEBHOOK_SECRET = '32ltozd7yiykq1rcglxnxk77rbsg69je';
@@ -49,7 +50,6 @@ var appEnv = cfenv.getAppEnv();
 var httpServer = http.createServer(app).listen(appEnv.port, '0.0.0.0', function() {
   // print a message when the server starts listening
   console.log("server starting on " + appEnv.url);
-  console.log("app is listening on port: " + (appEnv.port || 3000));
   console.log("\n");
 });
 var io = require("socket.io").listen(httpServer);
@@ -97,7 +97,8 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 			console.log(stringJsonbody);
 			console.log("Event original time:" + Date (body.time));
 			console.log("Latency: " + (Date.now() - body.time) );
-      io.sockets.emit('webhook-event', stringJsonbody);
+      body.time = moment(body.time).format("ddd, MMM DD, YYYY  hh:mm:ss.SSS A") ;
+      io.sockets.emit('webhook-event', body);
 
 			res.status(200).end();
 	}
