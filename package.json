@@ -1,18 +1,18 @@
 {
-  "name": "NodejsStarterApp",
-  "version": "0.0.1",
-  "private": true,
-  "scripts": {
-    "start": "node app.js"
-  },
-  "dependencies": {
-    "cfenv": "^1.0.3",
-    "express": "4.13.x",
-    "moment": "^2.16.0",
-    "socket.io": "^1.5.1"
-  },
-  "repository": {},
-  "engines": {
-    "node": "4.x"
-  }
+	"name": "NodejsStarterApp",
+	"version": "0.0.1",
+	"repository": {},
+	"scripts": {
+		"start": "node app.js"
+	},
+	"dependencies": {
+		"cfenv": "^1.0.3",
+		"express": "4.13.x",
+		"moment": "^2.16.0",
+		"socket.io": "^1.5.1"
+	},
+	"engines": {
+		"node": "4.x"
+	},
+	"private": true
 }

@@ -8,10 +8,9 @@ var http = require("http");
 var cfenv = require('cfenv');
 var events = require("events");
 var eventHandler = new events.EventEmitter();
-var moment = require('moment');
 
-// var WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
-var WEBHOOK_SECRET = '32ltozd7yiykq1rcglxnxk77rbsg69je';
+var WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+// var WEBHOOK_SECRET = '32ltozd7yiykq1rcglxnxk77rbsg69je';
 const WEBHOOK_CALLBACK = "/webhook_callback";
 
 var WEBHOOK_VERIFICATION_TOKEN_HEADER="X-OUTBOUND-TOKEN".toLowerCase();
@@ -60,6 +59,10 @@ var io = require("socket.io").listen(httpServer);
 //   console.log("\n");
 // });
 
+function formatDate(date) {
+	return date.getMonth() + "/" + date.getDate() + "/" + date.getFullYear() + ", " +
+		date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + "." + date.getMilliseconds();
+}
 app.get("/webhook", function(req, res) {
 	fs.readFile(__dirname + "/public/webhook.html", 'utf-8', function(err, data) {
     if (err) {
@@ -73,11 +76,14 @@ app.get("/webhook", function(req, res) {
 });
 
 app.get('/test', function(req, res){
+	var d = new Date();
+	console.log(formatDate(d));
   io.sockets.emit('webhook-event', { some: 'data' });
 res.send('hey');
 })
 
 app.post(WEBHOOK_CALLBACK, function(req, res) {
+	var data = { eventTime: new Date()};
 
 	if (!verifySender(req.headers, req.rawBody)) {
 			console.log("Cannot verify caller ! -------------");
@@ -89,18 +95,18 @@ app.post(WEBHOOK_CALLBACK, function(req, res) {
 	var stringJsonbody = JSON.stringify(body);
 	var eventType = body.type;
 	if (eventType === "verification")
-			handleVerificationRequest(res, body.challenge);
+		handleVerificationRequest(res, body.challenge);
 	else {
-			var orderIndex = req.headers[WEBHOOK_ORDER_INDEX_HEADER];
-			var retryCount = req.headers[WEBHOOK_RETRY_COUNT_HEADER];
-			console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
-			console.log(stringJsonbody);
-			console.log("Event original time:" + Date (body.time));
-			console.log("Latency: " + (Date.now() - body.time) );
-      body.time = moment(body.time).format("ddd, MMM DD, YYYY  hh:mm:ss.SSS A") ;
-      io.sockets.emit('webhook-event', body);
+		var orderIndex = req.headers[WEBHOOK_ORDER_INDEX_HEADER];
+		var retryCount = req.headers[WEBHOOK_RETRY_COUNT_HEADER];
+		// console.log("X-OUTBOUND-ORDER-INDEX, OUTBOUND-RETRY-COUNT: " + orderIndex + ", " + retryCount);
+		// console.log(stringJsonbody);
+		// console.log("Event original time:" + Date (body.time));
+		// console.log("Latency: " + (Date.now() - body.time) );
+		data.body = body;
+		io.sockets.emit('webhook-event', data);
 
-			res.status(200).end();
+		res.status(200).end();
 	}
 
 });

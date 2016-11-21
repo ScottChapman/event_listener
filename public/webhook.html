@@ -20,13 +20,25 @@
       // creating a new websocket
       var socket = io.connect( socketUrl );
 
+      function formatDate(date) {
+      	return date.getMonth() + "/" + date.getDate() + "/" + date.getFullYear() + ", " +
+      		date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + "." + date.getMilliseconds();
+      }
+
       // on every notification (new received outboud request event) we update the log
       socket.on('webhook-event', function (data) {
-        if (data.annotationPayload) {
-          data.annotationPayload = JSON.parse(data.annotationPayload)
+        var body = data.body;
+        if (body.annotationPayload) {
+          body.annotationPayload = JSON.parse(body.annotationPayload)
         }
+        var d = new Date(body.time);
         var currentDate = new Date();
-        var text = '*** Type: ' + data.type + ' *** ' + '<br/>Time: ' + currentDate + '<br/>' + ' Payload: <pre>' + JSON.stringify(data,null,'    ') + '</pre>';
+        var latency = (currentDate - body.time) / 1000;
+        body.time = formatDate(d);
+        var text = '*** Type: ' + body.type + ' *** ' +
+          '<br/>Time: ' + formatDate(currentDate) +
+          '<br/>Latency: ' + latency.toFixed(3) + " seconds." +
+          '<br/>' + ' Payload: <pre>' + JSON.stringify(body,null,'    ') + '</pre>' + "<br/>";
         // convert the json string into a valid javascript object
         //var _data = JSON.parse(data);
         $('time').html('Last Update:' + new Date());
