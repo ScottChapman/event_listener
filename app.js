@@ -8,6 +8,7 @@ var http = require("http");
 var cfenv = require('cfenv');
 var events = require("events");
 var eventHandler = new events.EventEmitter();
+var fs = require('fs');
 
 var WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 // var WEBHOOK_SECRET = '32ltozd7yiykq1rcglxnxk77rbsg69je';
